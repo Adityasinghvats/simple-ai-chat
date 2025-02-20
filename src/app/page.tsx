@@ -1,101 +1,130 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { message, type Message } from "@/app/actions";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [isLoading, setIsLoading] = useState(false);
+  const [inputMessage, setInputMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "system",
+      content:
+        "You're a helpful assistant who's going to use a set of tools to answer my questions",
+    },
+  ]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  async function sendMessage() {
+    setIsLoading(true);
+
+    const messageHistory = [
+      ...messages,
+      {
+        role: "user",
+        content: inputMessage,
+      },
+    ];
+
+    setInputMessage("");
+
+    const response = await message(messageHistory);
+
+    if (response) {
+      messageHistory.push(response);
+    }
+
+    setMessages(messageHistory);
+    setIsLoading(false);
+  }
+
+  return (
+    <div className="flex flex-col h-screen justify-between">
+      <header className="bg-gray-500 p-2">
+        <div className="flex lg:flex-1 items-center justify-center">
+          <h1 className="text-black font-bold">Chat application</h1>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </header>
+      <div className="flex flex-col flex-auto justify-between bg-gray-900 p-6">
+        <div className="flex flex-col h-full">
+          {messages.length > 0 &&
+            messages.map(({ role, content }, index) => {
+              if (role === "user")
+                return (
+                  <div
+                    key={role + index}
+                    className="col-start-1 col-end-8 p-3 rounded-lg"
+                  >
+                    <div className="flex flex-row items-center">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-400 text-white flex-shrink-0 text-sm">
+                        Me
+                      </div>
+                      <div className="relative ml-3 text-sm bg-white py-2 px-4 shadow rounded-xl">
+                        <div>{content}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+
+              if (role === "assistant")
+                return (
+                  <div
+                    key={role + index}
+                    className="col-start-6 col-end-13 p-3 rounded-lg"
+                  >
+                    <div className="flex items-center justify-start flex-row-reverse">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-green-400 flex-shrink-0 text-sm">
+                        AI
+                      </div>
+                      <div className="relative mr-3 text-sm bg-indigo-100 py-2 px-4 shadow rounded-xl">
+                        <div>{content}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+            })}
+        </div>
+
+        <div className="top-[100vh] flex flex-row items-center h-16 rounded-xl bg-gray-500 w-full px-4">
+          <div>
+            <button className="flex items-center justify-center text-gray-900 hover:text-gray-800">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <div className="flex-grow ml-4">
+            <div className="relative w-full">
+              <input
+                type="text"
+                disabled={isLoading}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                className="flex w-full border rounded-xl focus:outline-none focus:border-indigo-300 pl-4 h-10 bg-gray-200"
+              />
+            </div>
+          </div>
+          <div className="ml-4">
+            <button
+              onClick={sendMessage}
+              className="flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white px-4 py-2 flex-shrink-0"
+            >
+              <span>{isLoading ? "Loading..." : "Send"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
